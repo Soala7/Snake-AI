@@ -1,273 +1,389 @@
 # Retro Snake AI — Deep Q-Learning (DQN)
 
-An intelligent Snake game powered by **Deep Q-Learning (DQN)** using **PyTorch** and **Pygame**.
+A classic Snake game powered by **Deep Reinforcement Learning**. The agent learns to navigate the board, find food, avoid collisions, and improve its performance through repeated gameplay.
 
-The AI learns to navigate the board, find food, avoid walls and its own body, and improve its performance through reinforcement learning and experience replay.
+Built with **Python, PyTorch, Pygame, NumPy, and Matplotlib**.
+
+---
+
+## Gameplay
+
+The trained AI playing Snake in real time:
+
+<video src="snake.mp4" controls width="800"></video>
+
+> If GitHub does not render the MP4 directly in your README, you can also convert the gameplay recording to a GIF and embed that instead.
+
+### Game Graphics
+
+![Snake AI Gameplay](snake.png)
+
+---
 
 ## Features
 
-* **16-Feature State Representation**
-  Encodes immediate danger, movement direction, food location, snake length, and tail position to give the agent spatial awareness of its environment.
+* **Deep Q-Learning (DQN)** — Neural network-based decision making using PyTorch.
+* **16-Feature State Representation** — Includes danger detection, movement direction, food position, body length, and tail position.
+* **Tail Awareness** — The agent considers the relative position of its tail when making decisions.
+* **Reward Shaping** — Encourages the snake to move toward food while discouraging inefficient movement.
+* **Experience Replay** — Stores previous experiences and trains from batches of past gameplay.
+* **Short-Term & Long-Term Training** — Learns from individual moves as well as completed games.
+* **Model Persistence** — Saves the trained neural network so training can continue between sessions.
+* **Automatic Checkpointing** — Updates the saved model when a new record score is achieved.
+* **Live Training Metrics** — Matplotlib tracks score progression and running average score.
 
-* **Tail & Self-Collision Awareness**
-  Tracks the relative position of the snake's tail and normalized body length, helping the agent recognize situations that can lead to self-trapping and tail-chasing loops.
-
-* **Distance-Based Reward Shaping**
-  Rewards movement toward food while penalizing movement away from food, idle behavior, collisions, and inefficient navigation.
-
-* **Experience Replay**
-  Stores previous experiences in a replay buffer and samples batches during training to improve learning stability and reduce correlation between consecutive experiences.
-
-* **Automatic Model Checkpointing**
-  Saves the neural network weights to `./model/model.pth` whenever a new high score is achieved, allowing training to continue across restarts.
-
-* **Real-Time Training Visualization**
-  Uses Matplotlib to display current scores and running mean performance while the agent trains.
+---
 
 ## Project Structure
 
 ```text
 .
-├── agent.py          # AI agent, state representation, memory, and training loop
-├── snake.py          # Pygame environment, rendering, and game logic
-├── model.py          # PyTorch neural network and Q-learning trainer
-├── helper.py         # Real-time training visualization
-├── model/
-│   └── model.pth     # Saved neural network weights
-└── Snake/
-    ├── Graphics/
-    │   └── food.png
-    └── Sounds/
-        ├── eat.mp3
-        └── wall.mp3
+├── agent.py              # AI agent and training loop
+├── snake.py              # Snake game environment
+├── model.py              # Neural network and Q-learning trainer
+├── helper.py             # Training visualization
+├── snake.png             # Gameplay screenshot
+├── snake.mp4             # Gameplay recording
+└── model/
+    └── model.pth         # Saved neural network
 ```
+
+---
 
 ## Installation
 
-### Prerequisites
+### Requirements
 
 * Python 3.8+
-* pip
+* PyTorch
+* Pygame
+* NumPy
+* Matplotlib
 
-### Dependencies
-
-Install the required packages:
+Install the dependencies:
 
 ```bash
 pip install pygame torch numpy matplotlib
 ```
 
-## Running the AI
+---
 
-Start the training process with:
+## Run the AI
+
+Start the training environment with:
 
 ```bash
 python agent.py
 ```
 
-When launched, the system:
+If a trained model already exists, the agent can load it and continue improving rather than starting from an untrained network.
 
-1. Loads an existing `./model/model.pth` checkpoint if available.
-2. Starts the Snake environment.
-3. Observes the current game state.
-4. Selects an action using an epsilon-greedy policy.
-5. Receives a reward from the environment.
-6. Trains on the most recent experience.
-7. Stores the experience in replay memory.
-8. Performs long-term training after each game.
-9. Updates the live performance graph.
-10. Saves the model whenever a new record score is achieved.
+---
 
-This allows the agent to **train → save → restart → continue training** without losing its learned weights.
+## How the AI Learns
 
-## Deep Reinforcement Learning
-
-### State Representation
-
-The agent receives a **16-element state vector** describing the current environment.
-
-| Feature Category   | Inputs | Description                                        |
-| ------------------ | -----: | -------------------------------------------------- |
-| Immediate Danger   |      3 | Collision checks for straight, right, and left     |
-| Movement Direction |      4 | Current Left, Right, Up, or Down direction         |
-| Food Location      |      4 | Food position relative to the snake's head         |
-| Body Length        |      1 | Snake length normalized relative to board capacity |
-| Tail Location      |      4 | Tail position relative to the snake's head         |
-
-**Total: 16 input features**
-
-### Neural Network Architecture
+Each game follows a reinforcement-learning cycle:
 
 ```text
-Input
-16 Features
-    │
-    ▼
-┌───────────────┐
-│ Linear Layer  │
-│ 16 → 256      │
-└───────┬───────┘
-        │
-       ReLU
-        │
-        ▼
-┌───────────────┐
-│ Linear Layer  │
-│ 256 → 128     │
-└───────┬───────┘
-        │
-       ReLU
-        │
-        ▼
-┌───────────────┐
-│ Linear Layer  │
-│ 128 → 3       │
-└───────┬───────┘
-        │
-        ▼
-  Q-Values
+       ┌──────────────┐
+       │  Observe     │
+       │    State     │
+       └──────┬───────┘
+              │
+              ▼
+       ┌──────────────┐
+       │ Choose Action│
+       │  ε-Greedy    │
+       └──────┬───────┘
+              │
+              ▼
+       ┌──────────────┐
+       │ Play Move    │
+       └──────┬───────┘
+              │
+              ▼
+       ┌──────────────┐
+       │ Get Reward   │
+       │ + New State  │
+       └──────┬───────┘
+              │
+              ▼
+       ┌──────────────┐
+       │ Train Neural │
+       │    Network   │
+       └──────┬───────┘
+              │
+              └──────────► Repeat
 ```
 
-### Actions
+The agent gradually learns which actions produce higher long-term rewards.
 
-The network predicts Q-values for three possible actions:
+---
+
+## State Representation
+
+The AI receives a **16-feature state vector** describing the current situation.
+
+| Feature Group          | Features |
+| ---------------------- | -------: |
+| Immediate danger       |        3 |
+| Current direction      |        4 |
+| Food position          |        4 |
+| Normalized body length |        1 |
+| Tail position          |        4 |
+| **Total**              |   **16** |
+
+### State Information
+
+**Danger detection**
+
+* Collision directly ahead
+* Collision to the right
+* Collision to the left
+
+**Movement direction**
+
+* Moving left
+* Moving right
+* Moving up
+* Moving down
+
+**Food position**
+
+* Food is left of the head
+* Food is right of the head
+* Food is above the head
+* Food is below the head
+
+**Body information**
+
+* Normalized snake length
+* Tail left/right relationship
+* Tail above/below relationship
+
+This gives the network information about both **immediate survival** and **longer-term positioning**.
+
+---
+
+## Neural Network
+
+The Q-network uses a fully connected architecture:
 
 ```text
-[Straight, Turn Right, Turn Left]
+Input Layer
+16 features
+     │
+     ▼
+┌──────────────┐
+│  Linear 256  │
+│     ReLU     │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│  Linear 128  │
+│     ReLU     │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│   3 Outputs  │
+└──────────────┘
+       │
+       ▼
+[Straight, Right, Left]
 ```
 
-The action with the highest predicted Q-value is selected when the agent is exploiting its learned policy.
+The network outputs a **Q-value for each possible action**. The action with the highest predicted value is selected when the agent is exploiting what it has learned.
 
-During exploration, the agent randomly selects an action according to its epsilon-greedy exploration rate.
+---
+
+## Available Actions
+
+The agent operates using three relative actions:
+
+```text
+[1, 0, 0] → Straight
+[0, 1, 0] → Turn Right
+[0, 0, 1] → Turn Left
+```
+
+Using relative actions allows the same decision system to work regardless of the snake's current orientation.
+
+---
 
 ## Reward Structure
 
-| Event                 |  Reward |
-| --------------------- | ------: |
-| Eating food           | `+10.0` |
-| Moving closer to food |  `+0.1` |
-| Moving away from food | `-0.25` |
-| Collision / timeout   | `-10.0` |
+The environment uses reward shaping to guide learning.
 
-Reward shaping gives the agent a learning signal not only for successfully eating food, but also for making progress toward its objective.
+| Event               | Reward |
+| ------------------- | -----: |
+| Eat food            |    +10 |
+| Move closer to food |   +0.1 |
+| Move away from food |  -0.25 |
+| Collision / timeout |    -10 |
 
-## Training & Persistence
+The objective is not simply to survive. The agent must learn to **survive while efficiently reaching food**.
 
-The model is checkpointed whenever the agent achieves a new record:
+---
 
-```python
-agent.model.save('model.pth')
-```
+## Experience Replay
 
-At startup, the checkpoint is loaded:
-
-```python
-self.model.load(file_name='model.pth')
-```
-
-This means the AI does not have to relearn everything from the beginning after the program is closed.
+The agent stores previous experiences in a replay buffer:
 
 ```text
-             TRAINING
-                 │
-                 ▼
-          New High Score?
-            /         \
-          No           Yes
-          │             │
-          │             ▼
-          │       Save model.pth
-          │             │
-          └──────┬──────┘
-                 ▼
-            Next Game
-                 │
-                 ▼
-          Continue Training
+(state)
+   ↓
+(action)
+   ↓
+(reward)
+   ↓
+(next_state)
+   ↓
+(done)
 ```
 
-## Real-Time Metrics
+During long-term training, the agent samples experiences from this memory and trains on them.
 
-During training, the project tracks:
+This helps reduce the correlation between consecutive moves and allows useful experiences to be learned from multiple times.
 
-* Current game score
-* Highest score achieved
+---
+
+## Model Persistence
+
+Training can continue across multiple sessions.
+
+The model is saved as:
+
+```text
+model/model.pth
+```
+
+A saved model allows the agent to retain what it has learned instead of starting from random weights every time.
+
+The training workflow is therefore:
+
+```text
+Previous Training
+       │
+       ▼
+ Load Model
+       │
+       ▼
+ Continue Training
+       │
+       ▼
+ Improve Performance
+       │
+       ▼
+ Save Improved Model
+```
+
+---
+
+## Training Metrics
+
+During training, the project uses Matplotlib to visualize:
+
+* Score per game
 * Running mean score
-* Number of games played
+* Overall training progression
 
-The live graph makes it possible to observe whether the agent's performance is improving over time.
+Example:
+
+```text
+Score
+  │
+  │                 ╭──────
+  │            ╭────╯
+  │       ╭────╯
+  │  ╭────╯
+  │──╯
+  └──────────────────────────► Games
+```
+
+As training progresses, the goal is for the agent's average performance to improve.
+
+---
 
 ## Customization
 
-### Training Speed
+### Game Speed
 
-The game speed can be adjusted in `snake.py`.
-
-For example:
+Adjust the game speed in `snake.py`:
 
 ```python
 SPEED = 60
 ```
 
-Increasing the value can significantly accelerate training, although extremely high speeds may make visual monitoring less useful.
+Higher values make training and gameplay faster.
 
 ### Exploration
 
-The exploration rate is controlled in `agent.py`:
+The agent uses an ε-greedy strategy:
 
 ```python
 self.epsilon = max(1, 80 - self.n_games)
 ```
 
-This controls the balance between:
+Early training encourages exploration by trying random actions.
 
-* **Exploration** — trying random actions
-* **Exploitation** — choosing the action predicted to have the highest Q-value
+As the number of games increases, exploration decreases and the agent increasingly relies on its learned policy.
 
-As training progresses, exploration gradually decreases.
+---
 
 ## Technologies
 
-* **Python** — Core programming language
-* **PyTorch** — Neural network and Deep Q-Learning
-* **Pygame** — Game environment and rendering
-* **NumPy** — Numerical operations and state representation
-* **Matplotlib** — Training visualization
+| Technology | Purpose                         |
+| ---------- | ------------------------------- |
+| Python     | Core programming language       |
+| PyTorch    | Neural network and DQN training |
+| Pygame     | Snake game environment          |
+| NumPy      | State representation            |
+| Matplotlib | Training visualization          |
+
+---
 
 ## Learning Objectives
 
-This project was built to explore practical concepts in reinforcement learning and neural networks, including:
+This project was built to explore practical applications of:
 
+* Reinforcement Learning
 * Deep Q-Learning
-* Reinforcement learning
-* Q-values
-* Epsilon-greedy exploration
-* Experience replay
-* Reward shaping
-* Neural network training
-* Model checkpointing
-* Persistent AI training
-* Game-state representation
+* Neural Networks
+* Experience Replay
+* Reward Engineering
+* Exploration vs. Exploitation
+* Model Checkpointing
+* Persistent AI Training
+* Game AI
+
+Rather than simply implementing a pre-trained model, the goal is to understand how an agent can **learn through interaction with an environment**.
+
+---
 
 ## Roadmap
 
 * [x] Build Snake environment
-* [x] Implement AI agent
-* [x] Create 16-feature state representation
-* [x] Implement Deep Q-Learning
-* [x] Add experience replay
-* [x] Add reward shaping
-* [x] Add real-time training visualization
-* [x] Add persistent model checkpoints
-* [ ] Improve training efficiency
-* [ ] Experiment with different network architectures
-* [ ] Compare reward strategies
-* [ ] Evaluate long-term training performance
+* [x] Implement DQN agent
+* [x] Implement state representation
+* [x] Implement reward system
+* [x] Implement experience replay
+* [x] Add model persistence
+* [x] Add live training visualization
+* [x] Record gameplay
+* [ ] Improve reward shaping
+* [ ] Experiment with larger state representations
+* [ ] Compare different network architectures
+* [ ] Add evaluation mode
+* [ ] Benchmark trained models
+
+---
 
 ## Author
 
 **Soala Amachree**
 
-Mechatronics Engineering Student | AI & Software Developer
+Mechatronics Engineering Student • Systems & Software Developer • AI & Robotics Enthusiast
 
-Exploring **Artificial Intelligence, Robotics, Systems Programming, and Machine Learning**.
+Building projects across **AI, robotics, systems programming, and software engineering**.
