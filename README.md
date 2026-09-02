@@ -10,7 +10,7 @@ Built with **Python, PyTorch, Pygame, NumPy, and Matplotlib**.
 
 The trained AI playing Snake in real time:
 
-<video src="snake.mp4" controls width="800"></video>
+<video src="snake.gif" controls width="800"></video>
 
 > If GitHub does not render the MP4 directly in your README, you can also convert the gameplay recording to a GIF and embed that instead.
 
